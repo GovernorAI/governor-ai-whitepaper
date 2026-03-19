@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Governor — Live Governance Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0c10;
+      --surface:  #111318;
+      --border:   #1e2330;
+      --border2:  #2a3045;
+      --accent:   #4f8ef7;
+      --accent2:  #7c5af7;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --yellow:   #f59e0b;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --mono:     'JetBrains Mono', monospace;
+      --sans:     'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,12,16,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 32px; height: 56px; gap: 32px;
+    }
+    .nav-logo {
+      font-family: var(--mono); font-size: 18px; font-weight: 700;
+      color: var(--text); text-decoration: none; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-logo .bar { color: var(--accent); }
+    .nav-links { display: flex; gap: 4px; flex: 1; }
+    .nav-links a {
+      color: var(--muted); font-size: 13px; font-weight: 500;
+      text-decoration: none; padding: 6px 12px; border-radius: 6px;
+      transition: all .15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface); }
+    #nav-clock {
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      margin-left: auto; white-space: nowrap;
+    }
+    .badge-live {
+      background: rgba(34,197,94,.15); color: var(--green);
+      border: 1px solid rgba(34,197,94,.3);
+      font-size: 10px; font-family: var(--mono); font-weight: 600;
+      padding: 2px 7px; border-radius: 20px; letter-spacing: .04em;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .badge-live::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 92vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 24px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(79,142,247,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      border: 1px solid rgba(79,142,247,.25);
+      padding: 5px 14px; border-radius: 20px;
+      display: inline-block;
+    }
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 82px);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -.03em;
+      background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      max-width: 900px; margin: 0 auto 24px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px; color: #94a3b8; max-width: 600px;
+      margin: 0 auto 40px; line-height: 1.7;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      border: none; padding: 12px 28px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: all .15s;
+    }
+    .btn-primary:hover { background: #3b7de8; transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border2); padding: 12px 28px; border-radius: 8px;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+      transition: all .15s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-stats {
+      display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
+      margin-top: 64px; padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: var(--mono); font-size: 32px; font-weight: 700;
+      color: var(--text); display: block;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    /* ── SECTIONS ── */
+    section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+    .section-header { margin-bottom: 48px; }
+    .section-eyebrow {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+      margin-bottom: 12px; display: block;
+    }
+    .section-title {
+      font-size: 32px; font-weight: 700; letter-spacing: -.02em;
+      color: var(--text); margin-bottom: 12px;
+    }
+    .section-sub { color: var(--muted); font-size: 15px; max-width: 540px; }
+
+    /* ── CONTROL ROOM ── */
+    .posture-bar-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 24px;
+    }
+    .posture-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .posture-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .posture-score {
+      font-family: var(--mono); font-size: 28px; font-weight: 700;
+      color: var(--green);
+    }
+    .posture-bar-bg {
+      height: 10px; background: var(--border); border-radius: 5px; overflow: hidden;
+    }
+    .posture-bar-fill {
+      height: 100%; border-radius: 5px;
+      background: linear-gradient(90deg, var(--green), #16a34a);
+      transition: width 1.2s ease;
+    }
+
+    .invariant-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px; margin-bottom: 24px;
+    }
+    .inv-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+      transition: border-color .2s;
+    }
+    .inv-card:hover { border-color: var(--border2); }
+    .inv-card.fail { border-color: rgba(239,68,68,.35); }
+    .inv-icon {
+      width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700;
+    }
+    .inv-icon.pass { background: rgba(34,197,94,.15); color: var(--green); }
+    .inv-icon.fail { background: rgba(239,68,68,.15); color: var(--red); }
+    .inv-label { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+    .inv-label strong { display: block; color: var(--text); font-weight: 500; margin-bottom: 2px; }
+
+    .rooms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media(max-width:768px) { .rooms { grid-template-columns: 1fr; } }
+    .room-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .room-panel-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .room-panel-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .room-panel-body { padding: 16px; height: 240px; overflow-y: auto; }
+    .feed-item {
+      display: flex; gap: 10px; margin-bottom: 10px; font-size: 12px;
+      font-family: var(--mono);
+    }
+    .feed-ts { color: var(--muted); flex-shrink: 0; }
+    .feed-msg { color: #94a3b8; }
+    .feed-msg .ok { color: var(--green); }
+    .feed-msg .warn { color: var(--yellow); }
+    .feed-msg .fail { color: var(--red); }
+    .chain-row {
+      font-family: var(--mono); font-size: 11px;
+      padding: 8px 10px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .chain-row .hash { color: var(--accent); }
+    .chain-row .meta { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+    /* ── NODE FLEET ── */
+    .node-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .node-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .node-header {
+      padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .node-name { font-weight: 700; font-size: 15px; }
+    .node-role { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+    .node-status {
+      font-size: 11px; font-family: var(--mono); font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .node-status.online { background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.25); }
+    .node-status.standby { background: rgba(245,158,11,.12); color: var(--yellow); border: 1px solid rgba(245,158,11,.25); }
+    .node-metrics { padding: 16px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .metric-item { text-align: center; }
+    .metric-val { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--text); }
+    .metric-key { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+    .node-tags { padding: 0 20px 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 10px; font-family: var(--mono);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 3px 8px; border-radius: 4px; color: var(--muted);
+    }
+
+    /* ── TERMINAL ── */
+    .terminal {
+      background: #080a0d; border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden; margin-top: 0;
+    }
+    .terminal-bar {
+      background: #0f1117; border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .terminal-bar .dot {
+      width: 11px; height: 11px; border-radius: 50%;
+    }
+    .terminal-bar .dot:nth-child(1) { background: #ff5f56; }
+    .terminal-bar .dot:nth-child(2) { background: #ffbd2e; }
+    .terminal-bar .dot:nth-child(3) { background: #27c93f; }
+    .terminal-bar span { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: 8px; }
+    .terminal-body {
+      padding: 18px 20px; font-family: var(--mono); font-size: 12px;
+      line-height: 1.7; color: #94a3b8; height: 300px; overflow-y: auto;
+    }
+    .terminal-body .cmd { color: var(--accent); }
+    .terminal-body .ok { color: var(--green); }
+    .terminal-body .warn { color: var(--yellow); }
+    .terminal-body .err { color: var(--red); }
+    .terminal-body .dim { color: var(--muted); }
+    .terminal-body .hash { color: #c084fc; }
+    .cursor {
+      display: inline-block; width: 7px; height: 13px;
+      background: var(--accent); vertical-align: middle;
+      animation: blink .9s step-end infinite;
+    }
+
+    /* ── AUDIT EXPORT ── */
+    .audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media(max-width:900px) { .audit-grid { grid-template-columns: 1fr; } }
+    .audit-summary {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+    }
+    .audit-summary h3 { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 20px; }
+    .audit-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-row .key { color: var(--muted); }
+    .audit-row .val { font-family: var(--mono); font-weight: 600; color: var(--text); }
+    .audit-row .val.green { color: var(--green); }
+    .audit-row .val.accent { color: var(--accent); }
+
+    /* ── SELF-GOVERNING ── */
+    .sg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    @media(max-width:900px) { .sg-grid { grid-template-columns: 1fr; } }
+    .sg-decision {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+    }
+    .sg-decision h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+    .decision-box {
+      background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.25);
+      border-radius: 8px; padding: 16px; font-family: var(--mono); font-size: 12px;
+      line-height: 1.8;
+    }
+    .decision-box .field { color: var(--muted); }
+    .decision-box .val { color: var(--text); }
+    .decision-box .verdict { color: var(--green); font-weight: 700; font-size: 15px; }
+    .decision-box .sig { color: #c084fc; word-break: break-all; font-size: 10px; }
+
+    /* ── RED TEAM PHASES ── */
+    .phase-grid { display: grid; gap: 16px; }
+    .phase-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 20px;
+      align-items: start;
+    }
+    .phase-num {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: rgba(79,142,247,.1); border: 1px solid rgba(79,142,247,.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .phase-content {}
+    .phase-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .phase-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .phase-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .phase-tag {
+      font-size: 10px; font-family: var(--mono);
+      padding: 3px 8px; border-radius: 4px;
+      border: 1px solid var(--border2); color: var(--muted);
+    }
+    .phase-tag.nist { border-color: rgba(79,142,247,.35); color: var(--accent); }
+    .phase-tag.eu { border-color: rgba(124,90,247,.35); color: #a78bfa; }
+    .phase-tag.iso { border-color: rgba(245,158,11,.35); color: var(--yellow); }
+    .phase-tag.roi {
+      background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.3);
+      color: var(--green); font-weight: 700;
+    }
+    .phase-roi { text-align: right; flex-shrink: 0; }
+    .roi-score {
+      font-family: var(--mono); font-size: 22px; font-weight: 700;
+      color: var(--green); display: block;
+    }
+    .roi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── POLICY SNAPSHOT ── */
+    .policy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .policy-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px;
+    }
+    .policy-card h3 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .policy-card p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .policy-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-family: var(--mono); font-weight: 600;
+      padding: 3px 8px; border-radius: 4px; margin-bottom: 10px;
+    }
+    .policy-badge.enforced { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
+    .policy-badge.active { background: rgba(79,142,247,.1); color: var(--accent); border: 1px solid rgba(79,142,247,.2); }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center; padding: 100px 24px;
+      border-top: 1px solid var(--border);
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(79,142,247,.06) 0%, transparent 70%);
+    }
+    .cta-section h2 { font-size: 40px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 16px; }
+    .cta-section p { color: var(--muted); font-size: 17px; max-width: 500px; margin: 0 auto 36px; }
+
+    /* ── DIVIDER ── */
+    hr.div { border: none; border-top: 1px solid var(--border); margin: 0 24px; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: slideIn .4s ease forwards; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ── UTILS ── */
+    .mono { font-family: var(--mono); }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .text-yellow { color: var(--yellow); }
+    .text-accent { color: var(--accent); }
+    .text-muted { color: var(--muted); }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+    .gap-fill { flex: 1; }
+
+    /* run button */
+    .run-btn {
+      background: rgba(79,142,247,.12); color: var(--accent);
+      border: 1px solid rgba(79,142,247,.3); padding: 8px 18px; border-radius: 7px;
+      font-size: 12px; font-family: var(--mono); font-weight: 600; cursor: pointer;
+      transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .run-btn:hover { background: rgba(79,142,247,.22); }
+    .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<!-- ══ NAV ══════════════════════════════════════════════════════════════ -->
+<nav>
+  <a class="nav-logo" href="#">
+    <span class="bar">▌</span> Governor
+  </a>
+  <div class="nav-links">
+    <a href="#control-room">Control Room</a>
+    <a href="#fleet">Node Fleet</a>
+    <a href="#audit">Audit Export</a>
+    <a href="#self-gov">Self-Governing</a>
+    <a href="#redteam">Red Team</a>
+  </div>
+  <div class="badge-live">LIVE</div>
+  <span id="nav-clock"></span>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">FFIEC SR 11-7 · NIST AI RMF · EU AI Act</div>
+  <h1>AI Governance that<br><span>enforces itself</span></h1>
+  <p>Cryptographically enforced control plane for regulated institutions. Every model decision is signed, chained, and auditable for 7 years — no exceptions.</p>
+  <div class="hero-ctas">
+    <a href="#control-room" class="btn-primary">▶ Live Demo</a>
+    <a href="#redteam" class="btn-ghost">Red Team Framework →</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num" id="stat-invocations">0</span>
+      <span class="stat-label">AI Invocations</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="stat-blocks">0</span>
+      <span class="stat-label">Policy Blocks</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="stat-uptime">99.97%</span>
+      <span class="stat-label">Posture Uptime</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" id="stat-chain">0</span>
+      <span class="stat-label">Chain Length</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">7yr</span>
+      <span class="stat-label">Audit Retention</span>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ CONTROL ROOM ══════════════════════════════════════════════════════ -->
+<section id="control-room">
+  <div class="section-header">
+    <span class="section-eyebrow">Control Room</span>
+    <h2 class="section-title">Safety Posture — Live</h2>
+    <p class="section-sub">19 boolean invariants evaluated on every invocation. One FAIL = full stop.</p>
+  </div>
+
+  <div class="posture-bar-wrap">
+    <div class="posture-header">
+      <span class="posture-title">Overall Safety Posture</span>
+      <span class="posture-score" id="posture-score">19 / 19 PASS</span>
+    </div>
+    <div class="posture-bar-bg">
+      <div class="posture-bar-fill" id="posture-fill" style="width:100%"></div>
+    </div>
+  </div>
+
+  <div class="invariant-grid" id="invariant-grid"></div>
+
+  <div class="rooms">
+    <div class="room-panel">
+      <div class="room-panel-header">
+        <span class="room-panel-title">Invocation Feed</span>
+        <span class="badge-live">STREAMING</span>
+      </div>
+      <div class="room-panel-body" id="inv-feed"></div>
+    </div>
+    <div class="room-panel">
+      <div class="room-panel-header">
+        <span class="room-panel-title">Digest Chain</span>
+        <div class="badge-live">APPEND-ONLY</div>
+      </div>
+      <div class="room-panel-body" id="digest-chain"></div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ NODE FLEET ════════════════════════════════════════════════════════ -->
+<section id="fleet">
+  <div class="section-header">
+    <span class="section-eyebrow">Node Fleet</span>
+    <h2 class="section-title">3-Node Production Cluster</h2>
+    <p class="section-sub">Studio (primary), Red Champion, Blue Challenger — connected via Tailscale mesh.</p>
+  </div>
+  <div class="node-grid" id="node-grid"></div>
+</section>
+
+<hr class="div">
+
+<!-- ══ AUDIT EXPORT ═══════════════════════════════════════════════════════ -->
+<section id="audit">
+  <div class="section-header">
+    <span class="section-eyebrow">Audit Export</span>
+    <h2 class="section-title">WORM-Sealed Audit Package</h2>
+    <p class="section-sub">SHA-256 manifest, Enclave signature, S3 Object Lock — 7-year FFIEC-compliant retention.</p>
+  </div>
+  <div class="audit-grid">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <span style="font-size:13px;color:var(--muted);">Export Terminal</span>
+        <button class="run-btn" id="audit-btn" onclick="runAuditExport()">▶ Run Export</button>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <span>governor-audit-export</span>
+        </div>
+        <div class="terminal-body" id="audit-terminal">
+          <span class="dim">$ </span><span class="cmd">governor audit export --range 90d --seal worm</span><br>
+          <span class="dim">Ready. Press "Run Export" to stream.</span><br>
+        </div>
+      </div>
+    </div>
+    <div class="audit-summary">
+      <h3>Export Summary</h3>
+      <div class="audit-row"><span class="key">Period</span><span class="val" id="ae-period">—</span></div>
+      <div class="audit-row"><span class="key">Total Invocations</span><span class="val" id="ae-inv">—</span></div>
+      <div class="audit-row"><span class="key">Policy Blocks</span><span class="val" id="ae-blocks">—</span></div>
+      <div class="audit-row"><span class="key">Chain Entries</span><span class="val accent" id="ae-chain">—</span></div>
+      <div class="audit-row"><span class="key">Manifest Hash</span><span class="val" id="ae-hash" style="font-size:11px;">—</span></div>
+      <div class="audit-row"><span class="key">Enclave Signature</span><span class="val" id="ae-sig" style="font-size:11px;">—</span></div>
+      <div class="audit-row"><span class="key">S3 WORM Seal</span><span class="val green" id="ae-worm">Pending</span></div>
+      <div class="audit-row"><span class="key">Retention</span><span class="val">2555 days (7yr)</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ SELF-GOVERNING ════════════════════════════════════════════════════ -->
+<section id="self-gov">
+  <div class="section-header">
+    <span class="section-eyebrow">Self-Governing</span>
+    <h2 class="section-title">Governor Evaluates Itself</h2>
+    <p class="section-sub">The LLM governor is subject to the same 19 invariants it enforces. No privileged bypass. If its own posture degrades, it self-blocks and logs.</p>
+  </div>
+  <div class="sg-grid">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <span style="font-size:13px;color:var(--muted);">LLM Governor Stream</span>
+        <button class="run-btn" id="sg-btn" onclick="runSelfGov()">▶ Evaluate Governor</button>
+      </div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <span>governor-self-eval</span>
+        </div>
+        <div class="terminal-body" id="sg-terminal">
+          <span class="dim">$ </span><span class="cmd">governor self-eval --invariants all --sign enclave</span><br>
+          <span class="dim">Ready. Press "Evaluate Governor" to run.</span><br>
+        </div>
+      </div>
+    </div>
+    <div class="sg-decision">
+      <h3>Governor Decision Record</h3>
+      <div class="decision-box" id="sg-decision-box">
+        <div style="color:var(--muted);font-size:12px;">Awaiting evaluation…</div>
+      </div>
+      <div class="mt-16" style="font-size:12px;color:var(--muted);line-height:1.7;">
+        <strong style="color:var(--text);">Why this matters:</strong> A governance system that can bypass its own rules is not governance. Governor holds itself to zero-exception policy: if the 19-invariant gate fails for <em>any</em> principal — including the governor itself — the call is blocked, signed, and appended to the immutable digest chain.
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══ RED TEAM PHASES ════════════════════════════════════════════════════ -->
+<section id="redteam">
+  <div class="section-header">
+    <span class="section-eyebrow">Red Team Framework</span>
+    <h2 class="section-title">5-Phase Certification Pipeline</h2>
+    <p class="section-sub">Prioritized by ROI. Each phase maps to NIST AI RMF, EU AI Act, ISO 42001, SB 53, and AIGN ASGR. Automated via GitHub Actions.</p>
+  </div>
+  <div class="phase-grid" id="phase-grid"></div>
+</section>
+
+<hr class="div">
+
+<!-- ══ ACTIVE POLICIES ═══════════════════════════════════════════════════ -->
+<section id="policies">
+  <div class="section-header">
+    <span class="section-eyebrow">Active Policies</span>
+    <h2 class="section-title">Enforcement in Production</h2>
+    <p class="section-sub">Runtime-enforced policies on every inference path.</p>
+  </div>
+  <div class="policy-grid">
+    <div class="policy-card">
+      <div class="policy-badge enforced">● ENFORCED</div>
+      <h3>TLS-Only Database Access</h3>
+      <p>All application roles require hostssl + scram-sha-256. Plaintext connections rejected at pg_hba level. No exceptions for internal traffic.</p>
+    </div>
+    <div class="policy-card">
+      <div class="policy-badge enforced">● ENFORCED</div>
+      <h3>Append-Only Digest Chain</h3>
+      <p>Every AI invocation is hashed, chained, and GPG-signed by the _gsc Enclave key. Retroactive deletion is cryptographically detectable.</p>
+    </div>
+    <div class="policy-card">
+      <div class="policy-badge enforced">● ENFORCED</div>
+      <h3>Champion/Challenger Gate</h3>
+      <p>Red Mini (champion) vs Blue Mini (challenger) run 6-hour eval crons. Challenger promotes only if it wins on all eval dimensions.</p>
+    </div>
+    <div class="policy-card">
+      <div class="policy-badge enforced">● ENFORCED</div>
+      <h3>Role Separation</h3>
+      <p>gsc_api, gsc_governor, gsc_auditor, gsc_readonly, gsc_replicator — no lateral permission escalation. pgaudit logs all role events.</p>
+    </div>
+    <div class="policy-card">
+      <div class="policy-badge active">◈ ACTIVE</div>
+      <h3>FileVault Cold-Boot Guard</h3>
+      <p>destroyfvkeyonstandby=1, hibernatemode=25, standbydelaylow=0. FileVault key destroyed on sleep. Secure Token required for Enclave access.</p>
+    </div>
+    <div class="policy-card">
+      <div class="policy-badge active">◈ ACTIVE</div>
+      <h3>7-Year WORM Retention</h3>
+      <p>S3 Object Lock with 2555-day immutability. Audit exports are SHA-256 manifested, Enclave-signed, and sealed before upload.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ════════════════════════════════════════════════════════════════ -->
+<div class="cta-section">
+  <h2>Ready to govern your AI?</h2>
+  <p>Governor is built for regulated institutions that can't afford a governance gap.</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <a href="mailto:reed@governor.ai" class="btn-primary">Request Access</a>
+    <a href="#control-room" class="btn-ghost">Back to Demo</a>
+  </div>
+  <p style="margin-top:32px;font-size:12px;color:var(--muted);font-family:var(--mono);">
+    Governor AI · FFIEC SR 11-7 · NIST AI RMF 1.0 · EU AI Act Art. 9 · ISO/IEC 42001
+  </p>
+</div>
+
+<script>
+// ── Clock ────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('nav-clock').textContent =
+    now.toLocaleTimeString('en-US', {hour12:false}) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fakeHash() {
+  const chars = '0123456789abcdef';
+  return Array.from({length:16}, () => chars[Math.floor(Math.random()*16)]).join('');
+}
+function fakeFullHash() {
+  const chars = '0123456789abcdef';
+  return Array.from({length:40}, () => chars[Math.floor(Math.random()*16)]).join('');
+}
+function padTime(d) {
+  return d.toLocaleTimeString('en-US', {hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+// ── Stats counters ────────────────────────────────────────────────────────
+let _inv = 14872, _blocks = 23, _chain = 14872;
+function animateCounters() {
+  const target_inv = 14872, target_blocks = 23, target_chain = 14872;
+  let i = 0;
+  const steps = 60;
+  const timer = setInterval(() => {
+    i++;
+    const prog = i / steps;
+    const ease = 1 - Math.pow(1 - prog, 3);
+    document.getElementById('stat-invocations').textContent = Math.round(ease * target_inv).toLocaleString();
+    document.getElementById('stat-blocks').textContent = Math.round(ease * target_blocks);
+    document.getElementById('stat-chain').textContent = Math.round(ease * target_chain).toLocaleString();
+    if (i >= steps) clearInterval(timer);
+  }, 25);
+}
+window.addEventListener('load', () => setTimeout(animateCounters, 300));
+
+// ── Invariants ────────────────────────────────────────────────────────────
+const INVARIANTS = [
+  {id:'I-01', label:'Digest chain intact', desc:'All entries chained & signed'},
+  {id:'I-02', label:'TLS enforced on DB', desc:'hostssl required, plaintext rejected'},
+  {id:'I-03', label:'Model hash verified', desc:'SHA-256 matches manifest'},
+  {id:'I-04', label:'Role separation active', desc:'No lateral privilege escalation'},
+  {id:'I-05', label:'Audit log running', desc:'pgaudit capturing DDL/DML'},
+  {id:'I-06', label:'FileVault key present', desc:'Secure Enclave accessible'},
+  {id:'I-07', label:'Ollama localhost-only', desc:'OLLAMA_HOST=127.0.0.1:11434'},
+  {id:'I-08', label:'Runner as _gsc', desc:'RUNNER_ALLOW_RUNASROOT=0'},
+  {id:'I-09', label:'WAL archiving on', desc:'archive_mode=on, S3 target set'},
+  {id:'I-10', label:'Signed commits only', desc:'required_signatures enforced'},
+  {id:'I-11', label:'WORM bucket sealed', desc:'S3 Object Lock active'},
+  {id:'I-12', label:'No direct prod writes', desc:'gsc_readonly enforced in prod'},
+  {id:'I-13', label:'Challenger isolated', desc:'Blue Mini network ACL verified'},
+  {id:'I-14', label:'Eval scores logged', desc:'Champion/challenger results chained'},
+  {id:'I-15', label:'Token rotation current', desc:'GH_PAT last rotated <90d'},
+  {id:'I-16', label:'pgaudit loaded', desc:'shared_preload_libraries contains pgaudit'},
+  {id:'I-17', label:'scram-sha-256 only', desc:'MD5 auth rejected at pg_hba'},
+  {id:'I-18', label:'Enclave key present', desc:'/var/gsc/keys/gnupg accessible'},
+  {id:'I-19', label:'Tailscale ACLs set', desc:'Inter-node routing policy enforced'},
+];
+
+let invariantState = INVARIANTS.map(() => 'pass');
+
+function renderInvariants() {
+  const grid = document.getElementById('invariant-grid');
+  grid.innerHTML = INVARIANTS.map((inv, i) => {
+    const st = invariantState[i];
+    return `<div class="inv-card ${st}" id="inv-card-${i}">
+      <div class="inv-icon ${st}">${st === 'pass' ? '✓' : '✗'}</div>
+      <div class="inv-label">
+        <strong>${inv.id} · ${inv.label}</strong>
+        ${inv.desc}
+      </div>
+    </div>`;
+  }).join('');
+  const passing = invariantState.filter(s => s === 'pass').length;
+  const pct = Math.round(passing / INVARIANTS.length * 100);
+  document.getElementById('posture-score').textContent = `${passing} / ${INVARIANTS.length} PASS`;
+  document.getElementById('posture-score').style.color = passing === 19 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('posture-fill').style.width = pct + '%';
+  document.getElementById('posture-fill').style.background = passing === 19
+    ? 'linear-gradient(90deg, var(--green), #16a34a)'
+    : 'linear-gradient(90deg, var(--red), #dc2626)';
+}
+renderInvariants();
+
+// ── Live feed ─────────────────────────────────────────────────────────────
+const FEED_MSGS = [
+  () => `<span class="ok">PASS</span> invocation gid=${rnd(10000,99999)} model=llama3:8b all invariants satisfied`,
+  () => `<span class="ok">SIGN</span> digest entry #${(_chain++).toLocaleString()} hash=${fakeHash()}… sealed`,
+  () => `<span class="ok">EVAL</span> champion eval score=0.${rnd(91,99)} vs challenger 0.${rnd(82,90)} → champion retained`,
+  () => `<span class="ok">PASS</span> pgaudit captured DDL: CREATE INDEX gsc.model_invocations_idx`,
+  () => `<span class="warn">WARN</span> challenger cpu=${rnd(78,95)}% — eval paused, resumed after cool-down`,
+  () => `<span class="ok">PASS</span> role check gsc_api conn=${rnd(1,20)}/20 within limit`,
+  () => `<span class="ok">ARCH</span> WAL segment ${fakeHash().substring(0,8)} archived to s3://gsc-worm-audit/`,
+  () => `<span class="ok">PASS</span> TLS handshake verified client=gsc_governor tls=TLSv1.3`,
+  () => `<span class="ok">PASS</span> model hash sha256=${fakeHash()}… matches manifest`,
+  () => `<span class="ok">PASS</span> FileVault key accessible Secure Enclave verified`,
+];
+
+let feedTimer;
+function startFeed() {
+  const feed = document.getElementById('inv-feed');
+  function addLine() {
+    const msg = FEED_MSGS[rnd(0, FEED_MSGS.length - 1)]();
+    const ts = padTime(new Date());
+    const line = document.createElement('div');
+    line.className = 'feed-item animate-in';
+    line.innerHTML = `<span class="feed-ts">${ts}</span><span class="feed-msg">${msg}</span>`;
+    feed.insertBefore(line, feed.firstChild);
+    if (feed.children.length > 40) feed.removeChild(feed.lastChild);
+    _inv++;
+    document.getElementById('stat-invocations').textContent = _inv.toLocaleString();
+    document.getElementById('stat-chain').textContent = _chain.toLocaleString();
+  }
+  addLine();
+  feedTimer = setInterval(addLine, rnd(1800, 3200));
+}
+startFeed();
+
+// ── Digest chain ──────────────────────────────────────────────────────────
+function initChain() {
+  const chain = document.getElementById('digest-chain');
+  for (let i = 0; i < 6; i++) {
+    const h = fakeFullHash();
+    const prev = fakeFullHash();
+    const d = document.createElement('div');
+    d.className = 'chain-row';
+    d.innerHTML = `<span class="hash">${h.substring(0,8)}…${h.substring(32)}</span>
+<div class="meta">prev: ${prev.substring(0,8)}… · signed · ${padTime(new Date(Date.now() - i*4000))}</div>`;
+    chain.appendChild(d);
+  }
+}
+initChain();
+
+setInterval(() => {
+  const chain = document.getElementById('digest-chain');
+  const h = fakeFullHash();
+  const prev = fakeFullHash();
+  const d = document.createElement('div');
+  d.className = 'chain-row animate-in';
+  d.innerHTML = `<span class="hash">${h.substring(0,8)}…${h.substring(32)}</span>
+<div class="meta">prev: ${prev.substring(0,8)}… · signed · ${padTime(new Date())}</div>`;
+  chain.insertBefore(d, chain.firstChild);
+  if (chain.children.length > 20) chain.removeChild(chain.lastChild);
+}, 4500);
+
+// ── Node Fleet ────────────────────────────────────────────────────────────
+const NODES = [
+  {
+    name: 'Studio', role: 'Primary · LLM Host · Postgres Primary',
+    status: 'online', statusLabel: 'Online',
+    metrics: [{val:'99.97%', key:'Uptime'}, {val:'38°C', key:'Temp'}, {val:'24GB', key:'VRAM'}],
+    tags: ['studio','llm-host','postgres-primary','M2-Ultra','arm64'],
+  },
+  {
+    name: 'Red Mini', role: 'Champion · Control Plane',
+    status: 'online', statusLabel: 'Online',
+    metrics: [{val:'100%', key:'Pass Rate'}, {val:'0.94', key:'Eval Score'}, {val:'3', key:'Runs Today'}],
+    tags: ['red','champion','control-plane','M2-Pro','arm64'],
+  },
+  {
+    name: 'Blue Mini', role: 'Challenger · Eval Runner',
+    status: 'online', statusLabel: 'Online',
+    metrics: [{val:'0.91', key:'Eval Score'}, {val:'Δ-0.03', key:'vs Champion'}, {val:'6h', key:'Eval Cadence'}],
+    tags: ['blue','challenger','eval-runner','M2-Pro','arm64'],
+  },
+];
+
+document.getElementById('node-grid').innerHTML = NODES.map(n => `
+  <div class="node-card">
+    <div class="node-header">
+      <div>
+        <div class="node-name">${n.name}</div>
+        <div class="node-role">${n.role}</div>
+      </div>
+      <div class="node-status ${n.status}">${n.statusLabel}</div>
+    </div>
+    <div class="node-metrics">
+      ${n.metrics.map(m => `<div class="metric-item">
+        <div class="metric-val">${m.val}</div>
+        <div class="metric-key">${m.key}</div>
+      </div>`).join('')}
+    </div>
+    <div class="node-tags">${n.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+  </div>
+`).join('');
+
+// ── Audit Export simulation ───────────────────────────────────────────────
+function runAuditExport() {
+  const btn = document.getElementById('audit-btn');
+  btn.disabled = true;
+  const term = document.getElementById('audit-terminal');
+  term.innerHTML = '';
+
+  const lines = [
+    {t:0,   cls:'cmd',  txt:'$ governor audit export --range 90d --seal worm'},
+    {t:200, cls:'',     txt:'Connecting to postgres@localhost (TLS)…'},
+    {t:600, cls:'ok',   txt:'✓ Connection secured (TLSv1.3, ECDHE-RSA-AES256)'},
+    {t:900, cls:'',     txt:`Querying digest chain… found ${(14872).toLocaleString()} entries`},
+    {t:1300,cls:'',     txt:'Verifying chain integrity (SHA-256 chained hashes)…'},
+    {t:2100,cls:'ok',   txt:'✓ Chain intact — no gaps or hash mismatches'},
+    {t:2400,cls:'',     txt:'Generating manifest.json…'},
+    {t:2900,cls:'hash', txt:`  SHA-256: ${fakeFullHash()}`},
+    {t:3300,cls:'',     txt:'Requesting Enclave signature (_gsc GPG Ed25519)…'},
+    {t:3900,cls:'hash', txt:`  SIG: ${fakeFullHash()}${fakeFullHash().substring(0,8)}`},
+    {t:4200,cls:'ok',   txt:'✓ Manifest signed by Enclave key'},
+    {t:4600,cls:'',     txt:'Uploading to s3://gsc-worm-audit/exports/2026-03-18/…'},
+    {t:5400,cls:'ok',   txt:'✓ S3 Object Lock applied — retention: 2555 days'},
+    {t:5700,cls:'ok',   txt:'✓ WORM seal confirmed by AWS S3 API'},
+    {t:6000,cls:'ok',   txt:'─────────────────────────────────────────'},
+    {t:6100,cls:'ok',   txt:'  Export complete. Audit package sealed.'},
+    {t:6200,cls:'',     txt:'$ _'},
+  ];
+
+  const hash = fakeFullHash();
+  const sig = fakeFullHash() + fakeFullHash().substring(0,8);
+
+  lines.forEach(({t, cls, txt}) => {
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.innerHTML = `<span class="${cls}">${txt}</span>`;
+      term.appendChild(d);
+      term.scrollTop = term.scrollHeight;
+    }, t);
+  });
+
+  // Fill summary
+  setTimeout(() => {
+    document.getElementById('ae-period').textContent = '2025-12-18 → 2026-03-18';
+    document.getElementById('ae-inv').textContent = (14872).toLocaleString();
+    document.getElementById('ae-blocks').textContent = '23';
+    document.getElementById('ae-chain').textContent = (14872).toLocaleString() + ' entries';
+    document.getElementById('ae-hash').textContent = hash.substring(0,16) + '…';
+    document.getElementById('ae-sig').textContent = sig.substring(0,16) + '…';
+    document.getElementById('ae-worm').textContent = '✓ Sealed';
+    btn.disabled = false;
+  }, 6200);
+}
+
+// ── Self-Governing simulation ─────────────────────────────────────────────
+function runSelfGov() {
+  const btn = document.getElementById('sg-btn');
+  btn.disabled = true;
+  const term = document.getElementById('sg-terminal');
+  term.innerHTML = '';
+
+  const lines = [
+    {t:0,    cls:'cmd', txt:'$ governor self-eval --invariants all --sign enclave'},
+    {t:300,  cls:'',    txt:'Loading safety posture view…'},
+    {t:700,  cls:'',    txt:'Principal: com.governorai.runner (self)'},
+    {t:1000, cls:'',    txt:'Checking 19 invariants…'},
+    {t:1400, cls:'ok',  txt:'  I-01 digest chain intact ✓'},
+    {t:1600, cls:'ok',  txt:'  I-02 TLS enforced on DB ✓'},
+    {t:1800, cls:'ok',  txt:'  I-03 model hash verified ✓'},
+    {t:2000, cls:'ok',  txt:'  I-04 role separation active ✓'},
+    {t:2200, cls:'ok',  txt:'  I-06 FileVault key present ✓'},
+    {t:2400, cls:'ok',  txt:'  I-07 Ollama localhost-only ✓'},
+    {t:2600, cls:'ok',  txt:'  I-08 runner as _gsc ✓'},
+    {t:2800, cls:'ok',  txt:'  I-18 Enclave key accessible ✓'},
+    {t:3000, cls:'ok',  txt:'  [all 19 invariants] PASS'},
+    {t:3300, cls:'',    txt:'Safety posture: 19/19 PASS → ALLOW'},
+    {t:3700, cls:'',    txt:'Executing self-evaluation…'},
+    {t:4200, cls:'ok',  txt:'  Verdict: COMPLIANT — no drift detected'},
+    {t:4600, cls:'',    txt:'Signing decision record with Enclave key…'},
+    {t:5200, cls:'hash',txt:`  SIG: ${fakeFullHash()}`},
+    {t:5600, cls:'ok',  txt:'✓ Decision record appended to digest chain'},
+    {t:5900, cls:'ok',  txt:'  Entry #' + (_chain+1).toLocaleString() + ' sealed.'},
+    {t:6100, cls:'ok',  txt:'─────────────────────────────────────────'},
+    {t:6200, cls:'ok',  txt:'  Self-evaluation complete. Governor is compliant.'},
+    {t:6400, cls:'',    txt:'$ _'},
+  ];
+
+  lines.forEach(({t, cls, txt}) => {
+    setTimeout(() => {
+      const d = document.createElement('div');
+      d.innerHTML = `<span class="${cls}">${txt}</span>`;
+      term.appendChild(d);
+      term.scrollTop = term.scrollHeight;
+    }, t);
+  });
+
+  const sig = fakeFullHash() + fakeFullHash().substring(0,8);
+  const ts = new Date().toISOString();
+
+  setTimeout(() => {
+    document.getElementById('sg-decision-box').innerHTML = `
+<div><span class="field">principal:  </span><span class="val">com.governorai.runner</span></div>
+<div><span class="field">timestamp:  </span><span class="val">${ts}</span></div>
+<div><span class="field">posture:    </span><span class="val">19/19 PASS</span></div>
+<div><span class="field">verdict:    </span><span class="verdict">ALLOW · COMPLIANT</span></div>
+<div><span class="field">chain_entry:</span><span class="val">#${(_chain+1).toLocaleString()}</span></div>
+<div style="margin-top:8px"><span class="field">enclave_sig:</span><br><span class="sig">${sig}</span></div>`;
+    btn.disabled = false;
+    _chain++;
+    document.getElementById('stat-chain').textContent = _chain.toLocaleString();
+  }, 6400);
+}
+
+// ── Red Team Phases ────────────────────────────────────────────────────────
+const PHASES = [
+  {
+    num: 1, roi: '#1 ROI',
+    title: 'Baseline & Posture Verification',
+    sub: 'Run 19-invariant suite on every node. Generate compliance evidence map against NIST AI RMF. Time-box: 1 sprint.',
+    tags: [
+      {label:'NIST MAP-1', cls:'nist'},
+      {label:'NIST GOVERN-1', cls:'nist'},
+      {label:'ISO 42001 §6', cls:'iso'},
+      {label:'GH Actions CI', cls:''},
+      {label:'ROI: Evidence in 1 sprint', cls:'roi'},
+    ],
+    detail: 'Lowest effort, highest immediate value. Every audit starts here. Produces the compliance evidence PDF regulators ask for first. Maps directly to FFIEC SR 11-7 model inventory requirements.',
+  },
+  {
+    num: 2, roi: '#2 ROI',
+    title: 'Adversarial Prompt Injection Suite',
+    sub: 'Red team LLM with jail-break, role-override, and PII exfiltration attacks. Verify invariants block every path.',
+    tags: [
+      {label:'NIST MANAGE-2', cls:'nist'},
+      {label:'EU AI Art. 9', cls:'eu'},
+      {label:'SB 53 §17', cls:''},
+      {label:'AIGN ASGR R-3', cls:''},
+      {label:'ROI: Blocks regulatory risk', cls:'roi'},
+    ],
+    detail: 'Directly addresses the #1 question regulators ask: "what stops your model from leaking or being manipulated?" A passing suite here unlocks enterprise sales conversations immediately.',
+  },
+  {
+    num: 3, roi: '#3 ROI',
+    title: 'Champion/Challenger Drift Detection',
+    sub: 'Inject synthetic model drift, verify champion eval catches regression, confirm blocked challenger cannot promote.',
+    tags: [
+      {label:'NIST MEASURE-2', cls:'nist'},
+      {label:'ISO 42001 §8', cls:'iso'},
+      {label:'EU AI Art. 12', cls:'eu'},
+      {label:'AIGN ASGR R-5', cls:''},
+      {label:'ROI: Prevents silent regressions', cls:'roi'},
+    ],
+    detail: 'Validates the continuous monitoring story. Institutional buyers specifically look for automated re-validation (SR 11-7 §IV.C). This phase generates the monitoring evidence they require.',
+  },
+  {
+    num: 4, roi: '#4 ROI',
+    title: 'Audit Package Integrity Attack',
+    sub: 'Attempt chain tampering, manifest forgery, and WORM bypass. Verify cryptographic rejection on all paths.',
+    tags: [
+      {label:'NIST GOVERN-5', cls:'nist'},
+      {label:'EU AI Art. 17', cls:'eu'},
+      {label:'ISO 42001 §9', cls:'iso'},
+      {label:'SB 53 §22', cls:''},
+      {label:'ROI: Proves 7yr audit claim', cls:'roi'},
+    ],
+    detail: 'A regulator\'s second question: "prove the audit trail hasn\'t been tampered with." A signed red team report showing failed attacks on the WORM chain is the strongest possible evidence.',
+  },
+  {
+    num: 5, roi: '#5 ROI',
+    title: 'Certification Loop & Evidence Export',
+    sub: 'Run phases 1–4 end-to-end via GH Actions. Auto-generate NIST, EU AI Act, ISO, and FFIEC evidence packages.',
+    tags: [
+      {label:'NIST full cycle', cls:'nist'},
+      {label:'EU AI Act full', cls:'eu'},
+      {label:'ISO 42001 cert', cls:'iso'},
+      {label:'FFIEC SR 11-7', cls:''},
+      {label:'ROI: Certification artifact', cls:'roi'},
+    ],
+    detail: 'This is the product moat. Once automated, a customer can re-run certification quarterly in <4 hours vs 6–12 months with a consultant. Becomes a recurring subscription value driver.',
+  },
+];
+
+document.getElementById('phase-grid').innerHTML = PHASES.map(p => `
+  <div class="phase-card">
+    <div class="phase-num">${p.num}</div>
+    <div class="phase-content">
+      <div class="phase-title">${p.title}</div>
+      <div class="phase-sub">${p.sub}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">${p.detail}</div>
+      <div class="phase-tags">
+        ${p.tags.map(t => `<span class="phase-tag ${t.cls}">${t.label}</span>`).join('')}
+      </div>
+    </div>
+    <div class="phase-roi">
+      <span class="roi-score">${p.roi}</span>
+      <span class="roi-label">Priority</span>
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>
