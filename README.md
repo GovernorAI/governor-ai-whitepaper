@@ -89,4 +89,4 @@ Published March 19, 2026 as defensive prior art.
 All rights reserved. No implementation details disclosed.
 
 For responsible disclosure or collaboration inquiries:
-security@getgov.ai
+security@getgovernor.ai
